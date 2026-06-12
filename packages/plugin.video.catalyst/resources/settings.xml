@@ -80,18 +80,6 @@
                         <popup>false</popup>
                     </control>
                 </setting>
-                <setting id="results_limit" type="integer" label="32023">
-                    <level>0</level>
-                    <default>50</default>
-                    <constraints>
-                        <minimum>10</minimum>
-                        <step>10</step>
-                        <maximum>200</maximum>
-                    </constraints>
-                    <control type="slider" format="integer">
-                        <popup>false</popup>
-                    </control>
-                </setting>
                 <setting id="source_cache_hours" type="integer" label="32025">
                     <level>0</level>
                     <default>12</default>
@@ -104,6 +92,11 @@
                         <popup>false</popup>
                     </control>
                 </setting>
+            </group>
+        </category>
+
+        <category id="sources" label="32070">
+            <group id="1" label="32071">
                 <setting id="min_quality" type="string" label="32024">
                     <level>0</level>
                     <default>SD</default>
@@ -114,6 +107,91 @@
                             <option label="32042">720p</option>
                             <option label="32043">1080p</option>
                             <option label="32044">4K</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string"/>
+                </setting>
+                <setting id="max_quality" type="string" label="32073">
+                    <level>0</level>
+                    <default>4K</default>
+                    <constraints>
+                        <options>
+                            <option label="32041">SD</option>
+                            <option label="32042">720p</option>
+                            <option label="32043">1080p</option>
+                            <option label="32044">4K</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string"/>
+                </setting>
+                <setting id="hide_cam" type="boolean" label="32076">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="min_seeders" type="integer" label="32074">
+                    <level>0</level>
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <step>5</step>
+                        <maximum>100</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
+                <setting id="max_size_gb" type="integer" label="32075">
+                    <level>0</level>
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <step>5</step>
+                        <maximum>150</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
+                <setting id="results_limit" type="integer" label="32023">
+                    <level>0</level>
+                    <default>50</default>
+                    <constraints>
+                        <minimum>10</minimum>
+                        <step>10</step>
+                        <maximum>200</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
+            </group>
+            <group id="2" label="32072">
+                <setting id="sort_by" type="string" label="32077">
+                    <level>0</level>
+                    <default>quality</default>
+                    <constraints>
+                        <options>
+                            <option label="32080">quality</option>
+                            <option label="32081">seeders</option>
+                            <option label="32082">size</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string"/>
+                </setting>
+                <setting id="cached_first" type="boolean" label="32078">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="label_style" type="string" label="32079">
+                    <level>0</level>
+                    <default>detailed</default>
+                    <constraints>
+                        <options>
+                            <option label="32083">detailed</option>
+                            <option label="32084">compact</option>
+                            <option label="32085">minimal</option>
                         </options>
                     </constraints>
                     <control type="spinner" format="string"/>

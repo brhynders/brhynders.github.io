@@ -43,19 +43,45 @@ def parse_size_gb(text):
     return value / 1024.0 if m.group(2).lower() == 'mb' else value
 
 
-def _rank(source):
-    q = QUALITY_ORDER.get(source.get('quality', 'SD'), 1)
+def _q(source):
+    return QUALITY_ORDER.get(source.get('quality', 'SD'), 1)
+
+
+def _passes_filters(source):
+    """Apply the Settings > Sources > Filter options."""
+    q = _q(source)
+    floor = QUALITY_ORDER.get(kodi.get_setting('min_quality', 'SD'), 0)
+    ceil = QUALITY_ORDER.get(kodi.get_setting('max_quality', '4K'), 4)
+    if q < floor or q > ceil:
+        return False
+    if kodi.get_bool('hide_cam', True) and source.get('quality') == 'CAM':
+        return False
+    min_seeders = kodi.get_int('min_seeders', 0)
+    if min_seeders and (source.get('seeders') or 0) < min_seeders:
+        return False
+    max_size = kodi.get_int('max_size_gb', 0)
+    size = source.get('size') or 0
+    if max_size and size and size > max_size:
+        return False
+    return True
+
+
+def _sort_key(source):
+    q = _q(source)
     seeders = source.get('seeders', 0) or 0
-    return (q, seeders, source.get('size', 0) or 0)
+    size = source.get('size', 0) or 0
+    field = kodi.get_setting('sort_by', 'quality')
+    if field == 'seeders':
+        return (seeders, q, size)
+    if field == 'size':
+        return (size, q, seeders)
+    return (q, seeders, size)
 
 
 def sort_sources(sources):
-    """Apply the quality floor from settings, then sort best-first."""
-    floor_label = kodi.get_setting('min_quality', 'SD')
-    floor = QUALITY_ORDER.get(floor_label, 0)
-    filtered = [s for s in sources
-                if QUALITY_ORDER.get(s.get('quality', 'SD'), 1) >= floor]
-    filtered.sort(key=_rank, reverse=True)
+    """Filter, sort and de-dupe sources per the user's Sources settings."""
+    filtered = [s for s in sources if _passes_filters(s)]
+    filtered.sort(key=_sort_key, reverse=True)
     # Same release often appears from multiple indexers - keep the best-ranked
     # copy of each info-hash (already sorted, so the first seen is the best).
     seen, deduped = set(), []
@@ -70,12 +96,17 @@ def sort_sources(sources):
 
 
 def label_for(source):
-    """Human label for the source-selection dialog."""
-    bits = [source.get('quality', 'SD')]
+    """Human label for the source-selection dialog (style from settings)."""
+    style = kodi.get_setting('label_style', 'detailed')
+    quality = source.get('quality', 'SD')
+    title = source.get('release_title', '')
+    if style == 'minimal':
+        return '{0}  -  {1}'.format(quality, title)
+    bits = [quality]
     if source.get('size'):
         bits.append('{0:.2f} GB'.format(source['size']))
-    if source.get('seeders'):
-        bits.append('{0} S'.format(source['seeders']))
-    bits.append('[{0}]'.format(source.get('source', '?')))
-    title = source.get('release_title', '')
+    if style == 'detailed':
+        if source.get('seeders'):
+            bits.append('{0} S'.format(source['seeders']))
+        bits.append('[{0}]'.format(source.get('source', '?')))
     return '{0}  -  {1}'.format(' | '.join(bits), title)

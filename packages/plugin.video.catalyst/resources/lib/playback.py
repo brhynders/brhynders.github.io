@@ -22,8 +22,9 @@ def _annotate_cached(sources):
         s['cached'] = s.get('_hash') in cached
     if kodi.get_bool('cached_only', True):
         sources = [s for s in sources if s['cached']]
-    # cached first, then existing quality order
-    sources.sort(key=lambda s: 0 if s.get('cached') else 1)
+    elif kodi.get_bool('cached_first', True):
+        # stable sort keeps the within-group order from sort_sources()
+        sources.sort(key=lambda s: 0 if s.get('cached') else 1)
     return sources
 
 

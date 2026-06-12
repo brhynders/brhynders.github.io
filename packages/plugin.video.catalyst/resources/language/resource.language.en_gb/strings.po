@@ -156,3 +156,67 @@ msgstr ""
 msgctxt "#32066"
 msgid "WideList"
 msgstr ""
+
+msgctxt "#32070"
+msgid "Sources"
+msgstr ""
+
+msgctxt "#32071"
+msgid "Filter"
+msgstr ""
+
+msgctxt "#32072"
+msgid "Sort & display"
+msgstr ""
+
+msgctxt "#32073"
+msgid "Maximum quality"
+msgstr ""
+
+msgctxt "#32074"
+msgid "Minimum seeders"
+msgstr ""
+
+msgctxt "#32075"
+msgid "Maximum size (GB, 0 = any)"
+msgstr ""
+
+msgctxt "#32076"
+msgid "Hide CAM / Telesync"
+msgstr ""
+
+msgctxt "#32077"
+msgid "Sort sources by"
+msgstr ""
+
+msgctxt "#32078"
+msgid "Show cached sources first"
+msgstr ""
+
+msgctxt "#32079"
+msgid "Source list format"
+msgstr ""
+
+msgctxt "#32080"
+msgid "Quality"
+msgstr ""
+
+msgctxt "#32081"
+msgid "Seeders"
+msgstr ""
+
+msgctxt "#32082"
+msgid "Size"
+msgstr ""
+
+msgctxt "#32083"
+msgid "Detailed"
+msgstr ""
+
+msgctxt "#32084"
+msgid "Compact"
+msgstr ""
+
+msgctxt "#32085"
+msgid "Release name only"
+msgstr ""
