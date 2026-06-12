@@ -22,7 +22,7 @@ ADDON_ICON = ADDON.getAddonInfo('icon')
 ADDON_FANART = ADDON.getAddonInfo('fanart')
 
 # Populated by router.dispatch() at startup.
-BASE_URL = sys.argv[0] if len(sys.argv) > 0 else 'plugin://plugin.video.astro/'
+BASE_URL = sys.argv[0] if len(sys.argv) > 0 else 'plugin://plugin.video.catalyst/'
 HANDLE = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].lstrip('-').isdigit() else -1
 
 

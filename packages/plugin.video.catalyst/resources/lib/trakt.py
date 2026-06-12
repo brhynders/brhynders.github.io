@@ -17,7 +17,7 @@ API = 'https://api.trakt.tv'
 OOB = 'urn:ietf:wg:oauth:2.0:oob'
 TOKEN_FILE = os.path.join(kodi.ADDON_PROFILE, 'trakt_auth.json')
 
-# Embedded Astro Trakt app credentials (app-level, not per-user).
+# Embedded Catalyst Trakt app credentials (app-level, not per-user).
 # Optional settings overrides: trakt_client_id / trakt_client_secret.
 DEFAULT_CLIENT_ID = 'a87a4a42ed04c4ac000ed7973c0fd4a4211b845add9fc5940b896c8fe84c996f'
 DEFAULT_CLIENT_SECRET = '2bc1cd2b40a5e781e58a2c75d1ea45a9209dcb3cf98d6f8fbafada9d463ade2e'

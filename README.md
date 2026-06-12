@@ -1,4 +1,4 @@
-# Astro
+# Catalyst
 
 A lightweight movie & TV streaming add-on for **Kodi 21 "Omega"**, served from
 its own repository on GitHub Pages.
@@ -7,7 +7,7 @@ its own repository on GitHub Pages.
   Playing / Airing, Genres, Search) with full metadata (cast, runtime, studio,
   trailer) and watched overlays.
 - Pluggable **scraper base** — drop a file into
-  `packages/plugin.video.astro/resources/lib/scrapers/` to add a source.
+  `packages/plugin.video.catalyst/resources/lib/scrapers/` to add a source.
 - **Torbox** debrid resolver and two-way **Trakt** sync (lists, watchlist,
   scrobble, watched status).
 - Native Kodi GUI only — no custom windows.
@@ -19,14 +19,14 @@ its own repository on GitHub Pages.
    ```
    https://brhynders.github.io/
    ```
-   Name it `astro` and save.
-3. **Settings → Add-ons → Install from zip file** → `astro` →
-   `repository.astro.zip`.
-4. **Install from repository → Astro Repository → Video add-ons → Astro**.
+   Name it `catalyst` and save.
+3. **Settings → Add-ons → Install from zip file** → `catalyst` →
+   `repository.catalyst.zip`.
+4. **Install from repository → Catalyst Repository → Video add-ons → Catalyst**.
 
 Or just open <https://brhynders.github.io/> and download the repository zip.
 
-Then open **Astro → Tools → Settings → Services** to add your Torbox key and
+Then open **Catalyst → Tools → Settings → Services** to add your Torbox key and
 authorise Trakt.
 
 ## Repository layout
@@ -34,15 +34,15 @@ authorise Trakt.
 ```
 .
 ├── index.html                  static link to the installer zip
-├── repository.astro.zip        the one-time installer (static, unversioned)
+├── repository.catalyst.zip        the one-time installer (static, unversioned)
 ├── build.py
 └── packages/                   <- GitHub Pages datadir (the served repo)
-    ├── addons.xml  /  addons.xml.md5   (lists plugin.video.astro only)
-    └── plugin.video.astro/     source + plugin.video.astro-x.y.z.zip
+    ├── addons.xml  /  addons.xml.md5   (lists plugin.video.catalyst only)
+    └── plugin.video.catalyst/     source + plugin.video.catalyst-x.y.z.zip
 ```
 
-Install `repository.astro.zip` once; it points Kodi at `packages/` so
-`plugin.video.astro` auto-updates. The repository add-on is a static, unversioned
+Install `repository.catalyst.zip` once; it points Kodi at `packages/` so
+`plugin.video.catalyst` auto-updates. The repository add-on is a static, unversioned
 zip with no source kept — it only holds the datadir URL
 `https://brhynders.github.io/packages/` and never changes. (Kodi installs it by
 the `addon.xml` *inside* the zip, so the filename needs no version. To change the
@@ -55,7 +55,7 @@ python3 build.py              # build everything + install plugin into local Kod
 python3 build.py --no-install # build only
 ```
 
-`build.py` zips `plugin.video.astro` into `packages/` (excluding
+`build.py` zips `plugin.video.catalyst` into `packages/` (excluding
 `*.zip`/`__pycache__`) and regenerates `packages/addons.xml`(+`.md5`). Commit the
 generated zip and `addons.xml*` — GitHub Pages serves them as the live
 repository. `index.html` and the repository zip are static and left untouched.

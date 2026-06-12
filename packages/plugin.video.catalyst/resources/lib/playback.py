@@ -44,7 +44,7 @@ def _choose(sources):
 def _publish_now_playing(payload):
     """Hand the scrobble service the ids of what we're about to play."""
     import json
-    xbmcgui.Window(10000).setProperty('astro.now_playing', json.dumps(payload))
+    xbmcgui.Window(10000).setProperty('catalyst.now_playing', json.dumps(payload))
 
 
 def _play(source, list_item, payload=None):
@@ -72,7 +72,7 @@ def play_movie(tmdb_id, list_item=None):
     year = (details.get('release_date') or '')[:4]
     imdb = (details.get('external_ids') or {}).get('imdb_id')
 
-    with kodi.Progress('Astro') as pd:
+    with kodi.Progress('Catalyst') as pd:
         pd.update(20, 'Searching sources for {0}'.format(title))
         sources = scrapers.find_movie(title, year, imdb=imdb, tmdb=tmdb_id)
         pd.update(70, 'Checking Torbox cache')
@@ -90,7 +90,7 @@ def play_movie(tmdb_id, list_item=None):
 
 
 def play_episode(tmdb_id, season, episode, show_title, year, imdb=None, list_item=None):
-    with kodi.Progress('Astro') as pd:
+    with kodi.Progress('Catalyst') as pd:
         pd.update(20, 'Searching {0} S{1}E{2}'.format(show_title, season, episode))
         sources = scrapers.find_episode(show_title, year, season, episode,
                                         imdb=imdb, tmdb=tmdb_id)

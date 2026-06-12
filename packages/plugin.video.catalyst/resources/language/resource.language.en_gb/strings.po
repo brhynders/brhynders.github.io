@@ -1,7 +1,7 @@
-# Astro language file
+# Catalyst language file
 msgid ""
 msgstr ""
-"Project-Id-Version: plugin.video.astro\n"
+"Project-Id-Version: plugin.video.catalyst\n"
 "Report-Msgid-Bugs-To: \n"
 "Language-Team: English\n"
 "MIME-Version: 1.0\n"

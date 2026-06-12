@@ -6,7 +6,7 @@ from . import kodi
 from . import tmdb
 from . import trakt
 
-ART = {'icon': kodi.ADDON_ICON, 'fanart': kodi.ADDON_FANART}
+ART = {'icon': kodi.ADDON_ICON}
 
 # Per-folder icons drawn from the active skin's built-in "Default*.png" set, so
 # they look native to the user's skin and need no bundled assets.
@@ -46,7 +46,7 @@ ICONS = {
 def folder_art(key):
     """Art dict for a folder row using a skin Default icon (falls back to logo)."""
     icon = ICONS.get(key, kodi.ADDON_ICON)
-    return {'icon': icon, 'thumb': icon, 'fanart': kodi.ADDON_FANART}
+    return {'icon': icon, 'thumb': icon}
 
 
 def _trakt_ctx(media, tmdb_id, season=None, episode=None):

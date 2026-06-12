@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Background service: scrobbles Astro playback to Trakt.
+"""Background service: scrobbles Catalyst playback to Trakt.
 
 When playback.py resolves a stream it stashes the TMDB ids on the home window
-property 'astro.now_playing'. We consume that on start, track progress, and
+property 'catalyst.now_playing'. We consume that on start, track progress, and
 send Trakt scrobble start/stop (Trakt auto-marks watched at >=80%).
 """
 import json
@@ -13,10 +13,10 @@ import xbmcgui
 from resources.lib import trakt
 from resources.lib import kodi
 
-PROP = 'astro.now_playing'
+PROP = 'catalyst.now_playing'
 
 
-class AstroPlayer(xbmc.Player):
+class CatalystPlayer(xbmc.Player):
     def __init__(self):
         super().__init__()
         self.payload = None
@@ -64,8 +64,8 @@ class AstroPlayer(xbmc.Player):
 
 def main():
     monitor = xbmc.Monitor()
-    player = AstroPlayer()
-    kodi.log('Astro service started')
+    player = CatalystPlayer()
+    kodi.log('Catalyst service started')
     while not monitor.abortRequested():
         if player.payload:
             player.track()
