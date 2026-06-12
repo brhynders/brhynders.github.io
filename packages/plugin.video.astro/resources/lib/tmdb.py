@@ -86,6 +86,11 @@ def discover(media, genre_id, page=1):
                 sort_by='popularity.desc')
 
 
+def recommendations(media, tmdb_id, page=1):
+    """TMDB 'recommendations' for a title - powers Because You Watched."""
+    return _get('{0}/{1}/recommendations'.format(media, tmdb_id), page=page)
+
+
 def genres(media):
     data = _get('genre/{0}/list'.format(media), ttl=TTL_GENRE)
     return data.get('genres', [])

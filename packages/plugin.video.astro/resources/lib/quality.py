@@ -15,6 +15,15 @@ _PATTERNS = [
 ]
 
 _SIZE_RE = re.compile(r'(\d+(?:\.\d+)?)\s*(gb|mb)', re.I)
+_BTIH_RE = re.compile(r'btih:([a-fA-F0-9]{40})', re.I)
+
+
+def _dedup_key(source):
+    """Identify the same torrent across sources by its info-hash."""
+    m = _BTIH_RE.search(source.get('magnet', '') or '')
+    if m:
+        return m.group(1).lower()
+    return (source.get('url') or source.get('release_title', '')).lower().strip()
 
 
 def parse_quality(release_title):
@@ -47,8 +56,17 @@ def sort_sources(sources):
     filtered = [s for s in sources
                 if QUALITY_ORDER.get(s.get('quality', 'SD'), 1) >= floor]
     filtered.sort(key=_rank, reverse=True)
+    # Same release often appears from multiple indexers - keep the best-ranked
+    # copy of each info-hash (already sorted, so the first seen is the best).
+    seen, deduped = set(), []
+    for s in filtered:
+        key = _dedup_key(s)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(s)
     limit = kodi.get_int('results_limit', 50)
-    return filtered[:limit] if limit else filtered
+    return deduped[:limit] if limit else deduped
 
 
 def label_for(source):

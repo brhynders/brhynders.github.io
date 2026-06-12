@@ -211,6 +211,37 @@ def recommendations(media):
                    TTL_LIST)
 
 
+def trending(media):
+    return _cached('trakt:trend:{0}'.format(media),
+                   lambda: _request('GET', '/{0}/trending'.format(media),
+                                    params={'limit': 40}, auth=False) or [],
+                   TTL_LIST)
+
+
+def popular(media):
+    return _cached('trakt:pop:{0}'.format(media),
+                   lambda: _request('GET', '/{0}/popular'.format(media),
+                                    params={'limit': 40}, auth=False) or [],
+                   TTL_LIST)
+
+
+def anticipated(media):
+    return _cached('trakt:antic:{0}'.format(media),
+                   lambda: _request('GET', '/{0}/anticipated'.format(media),
+                                    params={'limit': 40}, auth=False) or [],
+                   TTL_LIST)
+
+
+def playback(media):
+    """In-progress items (Continue Watching). media is 'movies' or 'episodes'."""
+    return _request('GET', '/sync/playback/{0}'.format(media)) or []
+
+
+def history(media):
+    """Recently watched, newest first. media is 'movies' or 'episodes'."""
+    return _request('GET', '/sync/history/{0}'.format(media), params={'limit': 40}) or []
+
+
 def my_lists():
     personal = _request('GET', '/users/me/lists') or []
     liked = _request('GET', '/users/likes/lists', params={'limit': 100}) or []

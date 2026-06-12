@@ -54,7 +54,7 @@ msgid "Scrapers"
 msgstr ""
 
 msgctxt "#32021"
-msgid "Enable example scraper"
+msgid "Enable apibay (The Pirate Bay)"
 msgstr ""
 
 msgctxt "#32022"
@@ -71,6 +71,10 @@ msgstr ""
 
 msgctxt "#32025"
 msgid "Cache scraped sources (hours, 0 = off)"
+msgstr ""
+
+msgctxt "#32026"
+msgid "Enable Torrentio (debrid-optimised)"
 msgstr ""
 
 msgctxt "#32030"

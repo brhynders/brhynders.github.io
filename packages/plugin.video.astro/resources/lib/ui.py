@@ -25,9 +25,12 @@ ICONS = {
     'top_rated': 'DefaultMusicTop100.png',
     'upcoming': 'DefaultYear.png',
     'trakt': 'DefaultFavourites.png',
+    'because': 'DefaultRecentlyAddedEpisodes.png',
+    'continue': 'DefaultInProgressShows.png',
     'watchlist': 'DefaultPlaylist.png',
     'collection': 'DefaultVideoPlaylists.png',
     'recommended': 'DefaultFavourites.png',
+    'anticipated': 'DefaultYear.png',
     'lists': 'DefaultPlaylist.png',
 }
 
@@ -93,6 +96,8 @@ def movies_menu():
     kodi.add_directory('Search Movies', {'action': 'search', 'media': 'movie'},
                        art=folder_art('search'))
     if trakt.is_authorised():
+        kodi.add_directory('Because You Watched', {'action': 'watched_seeds', 'media': 'movie'},
+                           art=folder_art('because'))
         kodi.add_directory('Trakt', {'action': 'trakt_menu', 'media': 'movie'},
                            art=folder_art('trakt'))
     kodi.end_directory(content='')
@@ -107,6 +112,8 @@ def shows_menu():
     kodi.add_directory('Search TV Shows', {'action': 'search', 'media': 'tv'},
                        art=folder_art('search'))
     if trakt.is_authorised():
+        kodi.add_directory('Because You Watched', {'action': 'watched_seeds', 'media': 'tv'},
+                           art=folder_art('because'))
         kodi.add_directory('Trakt', {'action': 'trakt_menu', 'media': 'tv'},
                            art=folder_art('trakt'))
     kodi.end_directory(content='')
@@ -135,16 +142,31 @@ def _rich():
     return kodi.get_bool('rich_metadata', True)
 
 
-def _movie_row(item, gmap=None, details=None, watched=None):
+def _movie_row(item, gmap=None, details=None, watched=None, resume=None):
     info, art = tmdb.map_movie(item, gmap=gmap, details=details)
     if not info['title']:
         return
     if watched and info['tmdb'] in watched:
         info['playcount'] = 1
+    if resume:
+        info['resume'] = resume
     kodi.add_playable(info['title'],
                       {'action': 'play_movie', 'tmdb_id': info['tmdb']},
                       info=info, art=art, media_type='movie',
                       context_menu=_trakt_ctx('movie', info['tmdb']))
+
+
+def episode_row(tmdb_id, season, episode, show_title, year, imdb, info, art, resume=None):
+    """Add a playable episode row (shared by the season view and Continue Watching)."""
+    if resume:
+        info['resume'] = resume
+    label = '{0} - {1}x{2:02d}. {3}'.format(show_title, season, episode, info.get('title', ''))
+    kodi.add_playable(label,
+                      {'action': 'play_episode', 'tmdb_id': tmdb_id, 'season': season,
+                       'episode': episode, 'show_title': show_title, 'year': year,
+                       'imdb': imdb},
+                      info=info, art=art, media_type='episode',
+                      context_menu=_trakt_ctx('tv', tmdb_id, season=season, episode=episode))
 
 
 def _show_row(item, gmap=None, details=None, watched=None):
@@ -214,6 +236,13 @@ def discover(media, genre, page=1):
     data = tmdb.discover(media, genre, page=page)
     _mixed_rows(media, data.get('results', []))
     _paged(data, page, {'action': 'discover', 'media': media, 'genre': genre})
+    kodi.end_directory(content='movies' if media == 'movie' else 'tvshows')
+
+
+def recommendations(media, tmdb_id, page=1):
+    data = tmdb.recommendations(media, tmdb_id, page=page)
+    _mixed_rows(media, data.get('results', []))
+    _paged(data, page, {'action': 'recommendations', 'media': media, 'tmdb': tmdb_id})
     kodi.end_directory(content='movies' if media == 'movie' else 'tvshows')
 
 

@@ -68,6 +68,26 @@ version bump, run `build.py`, commit, and push — Kodi picks up the update.
 
 ## Adding a source
 
-Copy `packages/plugin.video.astro/resources/lib/scrapers/example.py`, rename the
-class, set a unique `name`, and implement `scrape_movie` / `scrape_episode`. It's
-auto-discovered and gets a `scraper_<name>` toggle in settings.
+Drop a file in `…/resources/lib/scrapers/`; it's auto-discovered and gets a
+`scraper_<name>` settings toggle. Three bases (see `scrapers/base.py`):
+
+- **`ApiScraper`** (JSON) — config only. Declare URL templates, a dotted
+  `results_path` to the list, and a `fields` map. Example (`apibay.py`):
+  ```python
+  class Apibay(ApiScraper):
+      name = 'apibay'
+      movie_url = 'https://apibay.org/q.php?q={query}&cat=200'
+      episode_url = 'https://apibay.org/q.php?q={title_url}+{se}&cat=200'
+      fields = {'release_title': 'name', 'hash': 'info_hash',
+                'size': 'size', 'seeders': 'seeders'}
+      size_unit = 'bytes'
+  ```
+- **`HtmlScraper`** (HTML) — declare a `row_selector` and per-field
+  `{css, attr}` selectors (`html_example.py`). Needs
+  `script.module.beautifulsoup4`.
+- **`ScraperBase`** — full control: implement `scrape_movie` / `scrape_episode`.
+
+URL template vars: `{title} {title_url} {year} {query} {imdb} {imdb_num} {tmdb}
+{season} {episode} {season2} {episode2} {se}`. Return source dicts with a
+`magnet` (or `hash`, or `url`); size/seeders are parsed from the release name if
+not supplied, and duplicate releases are de-duped by info-hash across sources.

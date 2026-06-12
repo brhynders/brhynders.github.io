@@ -60,18 +60,33 @@ def sign_out():
 # ---------------------------------------------------------------------------
 # Menus & lists
 # ---------------------------------------------------------------------------
+_MENU = [
+    ('Continue Watching', 'trakt_continue', None, 'continue'),
+    ('Watchlist', 'trakt_list', 'watchlist', 'watchlist'),
+    ('Collection', 'trakt_list', 'collection', 'collection'),
+    ('Recommended', 'trakt_list', 'recommended', 'recommended'),
+    ('Trending', 'trakt_list', 'trending', 'trending'),
+    ('Popular', 'trakt_list', 'popular', 'popular'),
+    ('Anticipated', 'trakt_list', 'anticipated', 'anticipated'),
+    ('Lists', 'trakt_lists', None, 'lists'),
+]
+
+_FEEDS = {
+    'watchlist': trakt.watchlist,
+    'collection': trakt.collection,
+    'recommended': trakt.recommendations,
+    'trending': trakt.trending,
+    'popular': trakt.popular,
+    'anticipated': trakt.anticipated,
+}
+
+
 def menu(media):
-    kodi.add_directory('Watchlist',
-                       {'action': 'trakt_list', 'kind': 'watchlist', 'media': media},
-                       art=ui.folder_art('watchlist'))
-    kodi.add_directory('Collection',
-                       {'action': 'trakt_list', 'kind': 'collection', 'media': media},
-                       art=ui.folder_art('collection'))
-    kodi.add_directory('Recommended',
-                       {'action': 'trakt_list', 'kind': 'recommended', 'media': media},
-                       art=ui.folder_art('recommended'))
-    kodi.add_directory('Lists', {'action': 'trakt_lists', 'media': media},
-                       art=ui.folder_art('lists'))
+    for label, action, kind, icon in _MENU:
+        params = {'action': action, 'media': media}
+        if kind:
+            params['kind'] = kind
+        kodi.add_directory(label, params, art=ui.folder_art(icon))
     kodi.end_directory(content='')
 
 
@@ -114,14 +129,89 @@ def _render(media, items):
 
 
 def show_list(kind, media):
-    plural = _plural(media)
-    if kind == 'watchlist':
-        items = trakt.watchlist(plural)
-    elif kind == 'collection':
-        items = trakt.collection(plural)
-    else:
-        items = trakt.recommendations(plural)
-    _render(media, items or [])
+    feed = _FEEDS.get(kind, trakt.watchlist)
+    _render(media, feed(_plural(media)) or [])
+
+
+def watched_seeds(media):
+    """List recently-watched titles; each opens its TMDB recommendations."""
+    hist = trakt.history('movies' if media == 'movie' else 'episodes')
+    key = 'movie' if media == 'movie' else 'show'
+    ids = []
+    for it in hist:
+        tid = (it.get(key) or {}).get('ids', {}).get('tmdb')
+        if tid and tid not in ids:
+            ids.append(tid)
+        if len(ids) >= 20:
+            break
+    if not ids:
+        kodi.notify('No Trakt history yet - watch something first')
+    details = (tmdb.bulk_movie_details(ids) if media == 'movie'
+               else tmdb.bulk_show_details(ids))
+    gmap = tmdb.genre_map('movie' if media == 'movie' else 'tv')
+    for tid in ids:
+        d = details.get(tid)
+        if not d:
+            continue
+        info, art = (tmdb.map_movie(d, gmap=gmap, details=d) if media == 'movie'
+                     else tmdb.map_show(d, gmap=gmap, details=d))
+        kodi.add_directory('Because you watched {0}'.format(info['title']),
+                           {'action': 'recommendations', 'media': media, 'tmdb': tid},
+                           info=info, art=art,
+                           media_type='movie' if media == 'movie' else 'tvshow')
+    kodi.end_directory(content='movies' if media == 'movie' else 'tvshows')
+
+
+def continue_watching(media):
+    """In-progress items from Trakt, with a resume point so playback resumes."""
+    if media == 'movie':
+        items = sorted(trakt.playback('movies'),
+                       key=lambda i: i.get('paused_at', ''), reverse=True)
+        ids, prog = [], {}
+        for it in items:
+            tid = (it.get('movie') or {}).get('ids', {}).get('tmdb')
+            if tid and tid not in prog:
+                ids.append(tid)
+                prog[tid] = it.get('progress', 0)
+        details = tmdb.bulk_movie_details(ids)
+        gmap = tmdb.genre_map('movie')
+        watched = trakt.watched_movie_ids()
+        for tid in ids:
+            d = details.get(tid)
+            if not d:
+                continue
+            rt = (d.get('runtime') or 0) * 60
+            resume = (rt * prog[tid] / 100.0, rt) if rt and prog[tid] else None
+            ui._movie_row(d, gmap=gmap, details=d, watched=watched, resume=resume)
+        kodi.end_directory(content='movies')
+        return
+
+    # episodes
+    items = sorted(trakt.playback('episodes'),
+                   key=lambda i: i.get('paused_at', ''), reverse=True)
+    for it in items[:40]:
+        show = it.get('show') or {}
+        ep = it.get('episode') or {}
+        tid = (show.get('ids') or {}).get('tmdb')
+        imdb = (show.get('ids') or {}).get('imdb') or ''
+        season = ep.get('season')
+        number = ep.get('number')
+        progress = it.get('progress', 0)
+        if not (tid and season and number):
+            continue
+        sdetails = tmdb.show_details(tid)
+        show_info, show_art = tmdb.map_show(sdetails, details=sdetails)
+        season_data = tmdb.season_details(tid, season)
+        epobj = next((x for x in season_data.get('episodes', [])
+                      if x.get('episode_number') == number), None)
+        if not epobj:
+            continue
+        info, art = tmdb.map_episode(epobj, show_info, show_art)
+        rt = (epobj.get('runtime') or (sdetails.get('episode_run_time') or [0])[0] or 0) * 60
+        resume = (rt * progress / 100.0, rt) if rt and progress else None
+        ui.episode_row(tid, season, number, show_info['title'],
+                       show_info.get('year', ''), imdb, info, art, resume=resume)
+    kodi.end_directory(content='episodes')
 
 
 def custom_lists(media):

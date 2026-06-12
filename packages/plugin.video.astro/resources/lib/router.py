@@ -40,6 +40,8 @@ def _route(action, p):
         return ui.shows_list(p['category'], p.get('page', 1))
     if action == 'discover':
         return ui.discover(p['media'], p['genre'], p.get('page', 1))
+    if action == 'recommendations':
+        return ui.recommendations(p['media'], p['tmdb'], p.get('page', 1))
     if action == 'search':
         return ui.search(p['media'], p.get('page', 1), p.get('query'))
 
@@ -57,6 +59,10 @@ def _route(action, p):
 
     if action == 'trakt_menu':
         return trakt_ui.menu(p['media'])
+    if action == 'trakt_continue':
+        return trakt_ui.continue_watching(p['media'])
+    if action == 'watched_seeds':
+        return trakt_ui.watched_seeds(p['media'])
     if action == 'trakt_list':
         return trakt_ui.show_list(p['kind'], p['media'])
     if action == 'trakt_lists':

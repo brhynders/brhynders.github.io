@@ -58,7 +58,12 @@
 
         <category id="scrapers" label="32020">
             <group id="1">
-                <setting id="scraper_example" type="boolean" label="32021">
+                <setting id="scraper_apibay" type="boolean" label="32021">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="scraper_torrentio" type="boolean" label="32026">
                     <level>0</level>
                     <default>true</default>
                     <control type="toggle"/>

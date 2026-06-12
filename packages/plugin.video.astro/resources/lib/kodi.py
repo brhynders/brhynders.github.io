@@ -190,6 +190,12 @@ def _apply_info(li, info, media_type):
             tag.setPlaycount(int(info['playcount']))
         except (ValueError, TypeError):
             pass
+    if info.get('resume'):
+        try:
+            secs, total = info['resume']
+            tag.setResumePoint(float(secs), float(total))
+        except (ValueError, TypeError):
+            pass
     if info.get('studio'):
         tag.setStudios(info['studio'])
     if info.get('director'):
