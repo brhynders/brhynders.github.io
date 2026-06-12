@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NOTE: packages/**/*.zip and packages/addons.xml* are intentionally committed -
+# GitHub Pages serves them as the live Kodi repository.

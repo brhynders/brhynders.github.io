@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+    <addon id="plugin.video.astro" name="Astro" version="1.1.0" provider-name="Astro">
+        <requires>
+            <import addon="xbmc.python" version="3.0.0"/>
+            <import addon="script.module.requests" version="2.22.0"/>
+        </requires>
+        <extension point="xbmc.python.pluginsource" library="default.py">
+            <provides>video</provides>
+        </extension>
+        <extension point="xbmc.service" library="service.py"/>
+        <extension point="xbmc.addon.metadata">
+            <summary lang="en_GB">Astro - lightweight movie &amp; TV streaming</summary>
+            <description lang="en_GB">A stripped-down streaming browser. TMDB-powered Movies and TV Shows lists, a pluggable scraper base (drop a file in resources/lib/scrapers to add a source) and a Torbox debrid resolver. Uses native Kodi GUI - no custom windows.</description>
+            <platform>all</platform>
+            <license>GPL-3.0-or-later</license>
+            <assets>
+                <icon>icon.png</icon>
+                <fanart>fanart.png</fanart>
+            </assets>
+        </extension>
+    </addon>
+</addons>
