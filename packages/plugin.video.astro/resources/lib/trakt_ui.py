@@ -62,12 +62,16 @@ def sign_out():
 # ---------------------------------------------------------------------------
 def menu(media):
     kodi.add_directory('Watchlist',
-                       {'action': 'trakt_list', 'kind': 'watchlist', 'media': media}, art=ui.ART)
+                       {'action': 'trakt_list', 'kind': 'watchlist', 'media': media},
+                       art=ui.folder_art('watchlist'))
     kodi.add_directory('Collection',
-                       {'action': 'trakt_list', 'kind': 'collection', 'media': media}, art=ui.ART)
+                       {'action': 'trakt_list', 'kind': 'collection', 'media': media},
+                       art=ui.folder_art('collection'))
     kodi.add_directory('Recommended',
-                       {'action': 'trakt_list', 'kind': 'recommended', 'media': media}, art=ui.ART)
-    kodi.add_directory('Lists', {'action': 'trakt_lists', 'media': media}, art=ui.ART)
+                       {'action': 'trakt_list', 'kind': 'recommended', 'media': media},
+                       art=ui.folder_art('recommended'))
+    kodi.add_directory('Lists', {'action': 'trakt_lists', 'media': media},
+                       art=ui.folder_art('lists'))
     kodi.end_directory(content='')
 
 
@@ -131,7 +135,8 @@ def custom_lists(media):
             continue
         kodi.add_directory(lst.get('name') or 'List',
                            {'action': 'trakt_list_items', 'owner': lst['owner'],
-                            'list_id': list_id, 'media': media}, art=ui.ART)
+                            'list_id': list_id, 'media': media},
+                           art=ui.folder_art('lists'))
     kodi.end_directory(content='')
 
 

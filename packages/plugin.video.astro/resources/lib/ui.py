@@ -8,6 +8,35 @@ from . import trakt
 
 ART = {'icon': kodi.ADDON_ICON, 'fanart': kodi.ADDON_FANART}
 
+# Per-folder icons drawn from the active skin's built-in "Default*.png" set, so
+# they look native to the user's skin and need no bundled assets.
+ICONS = {
+    'movies': 'DefaultMovies.png',
+    'tvshows': 'DefaultTVShows.png',
+    'search': 'DefaultAddonsSearch.png',
+    'tools': 'DefaultAddonProgram.png',
+    'settings': 'DefaultAddonService.png',
+    'genres': 'DefaultGenre.png',
+    'trending': 'DefaultRecentlyAddedMovies.png',
+    'popular': 'DefaultFavourites.png',
+    'now_playing': 'DefaultInProgressShows.png',
+    'on_the_air': 'DefaultInProgressShows.png',
+    'airing_today': 'DefaultInProgressShows.png',
+    'top_rated': 'DefaultMusicTop100.png',
+    'upcoming': 'DefaultYear.png',
+    'trakt': 'DefaultFavourites.png',
+    'watchlist': 'DefaultPlaylist.png',
+    'collection': 'DefaultVideoPlaylists.png',
+    'recommended': 'DefaultFavourites.png',
+    'lists': 'DefaultPlaylist.png',
+}
+
+
+def folder_art(key):
+    """Art dict for a folder row using a skin Default icon (falls back to logo)."""
+    icon = ICONS.get(key, kodi.ADDON_ICON)
+    return {'icon': icon, 'thumb': icon, 'fanart': kodi.ADDON_FANART}
+
 
 def _trakt_ctx(media, tmdb_id, season=None, episode=None):
     """Build Trakt context-menu entries for a row (empty if not authorised)."""
@@ -48,43 +77,54 @@ SHOW_CATS = [
 # Top level
 # ---------------------------------------------------------------------------
 def root():
-    kodi.add_directory('Movies', {'action': 'movies_menu'}, art=ART)
-    kodi.add_directory('TV Shows', {'action': 'shows_menu'}, art=ART)
-    kodi.add_directory('Search', {'action': 'search_menu'}, art=ART)
-    kodi.add_directory('Tools', {'action': 'tools'}, art=ART)
+    kodi.add_directory('Movies', {'action': 'movies_menu'}, art=folder_art('movies'))
+    kodi.add_directory('TV Shows', {'action': 'shows_menu'}, art=folder_art('tvshows'))
+    kodi.add_directory('Search', {'action': 'search_menu'}, art=folder_art('search'))
+    kodi.add_directory('Tools', {'action': 'tools'}, art=folder_art('tools'))
     kodi.end_directory(content='')
 
 
 def movies_menu():
     for label, cat in MOVIE_CATS:
-        kodi.add_directory(label, {'action': 'movies_list', 'category': cat}, art=ART)
-    kodi.add_directory('Genres', {'action': 'genres', 'media': 'movie'}, art=ART)
-    kodi.add_directory('Search Movies', {'action': 'search', 'media': 'movie'}, art=ART)
+        kodi.add_directory(label, {'action': 'movies_list', 'category': cat},
+                           art=folder_art(cat))
+    kodi.add_directory('Genres', {'action': 'genres', 'media': 'movie'},
+                       art=folder_art('genres'))
+    kodi.add_directory('Search Movies', {'action': 'search', 'media': 'movie'},
+                       art=folder_art('search'))
     if trakt.is_authorised():
-        kodi.add_directory('Trakt', {'action': 'trakt_menu', 'media': 'movie'}, art=ART)
+        kodi.add_directory('Trakt', {'action': 'trakt_menu', 'media': 'movie'},
+                           art=folder_art('trakt'))
     kodi.end_directory(content='')
 
 
 def shows_menu():
     for label, cat in SHOW_CATS:
-        kodi.add_directory(label, {'action': 'shows_list', 'category': cat}, art=ART)
-    kodi.add_directory('Genres', {'action': 'genres', 'media': 'tv'}, art=ART)
-    kodi.add_directory('Search TV Shows', {'action': 'search', 'media': 'tv'}, art=ART)
+        kodi.add_directory(label, {'action': 'shows_list', 'category': cat},
+                           art=folder_art(cat))
+    kodi.add_directory('Genres', {'action': 'genres', 'media': 'tv'},
+                       art=folder_art('genres'))
+    kodi.add_directory('Search TV Shows', {'action': 'search', 'media': 'tv'},
+                       art=folder_art('search'))
     if trakt.is_authorised():
-        kodi.add_directory('Trakt', {'action': 'trakt_menu', 'media': 'tv'}, art=ART)
+        kodi.add_directory('Trakt', {'action': 'trakt_menu', 'media': 'tv'},
+                           art=folder_art('trakt'))
     kodi.end_directory(content='')
 
 
 def search_menu():
-    kodi.add_directory('Search Movies', {'action': 'search', 'media': 'movie'}, art=ART)
-    kodi.add_directory('Search TV Shows', {'action': 'search', 'media': 'tv'}, art=ART)
+    kodi.add_directory('Search Movies', {'action': 'search', 'media': 'movie'},
+                       art=folder_art('search'))
+    kodi.add_directory('Search TV Shows', {'action': 'search', 'media': 'tv'},
+                       art=folder_art('search'))
     kodi.end_directory(content='')
 
 
 def genres(media):
     for g in tmdb.genres(media):
         kodi.add_directory(g['name'],
-                           {'action': 'discover', 'media': media, 'genre': g['id']}, art=ART)
+                           {'action': 'discover', 'media': media, 'genre': g['id']},
+                           art=folder_art('genres'))
     kodi.end_directory(content='')
 
 
@@ -245,11 +285,13 @@ def tools():
     from . import scrapers
     tb = 'configured' if torbox.is_configured() else 'NOT set'
     tk = 'authorised' if trakt.is_authorised() else 'not authorised'
-    kodi.add_directory('Settings', {'action': 'settings'}, art=ART)
-    kodi.add_directory('Torbox API key: {0}'.format(tb), {'action': 'settings'}, art=ART)
-    kodi.add_directory('Trakt: {0}'.format(tk), {'action': 'settings'}, art=ART)
+    kodi.add_directory('Settings', {'action': 'settings'}, art=folder_art('settings'))
+    kodi.add_directory('Torbox API key: {0}'.format(tb), {'action': 'settings'},
+                       art=folder_art('tools'))
+    kodi.add_directory('Trakt: {0}'.format(tk), {'action': 'settings'},
+                       art=folder_art('trakt'))
     enabled = [n for n, on in scrapers.available() if on]
     kodi.add_directory('Active scrapers: {0}'.format(', '.join(enabled) or 'none'),
-                       {'action': 'settings'}, art=ART)
-    kodi.add_directory('Clear cache', {'action': 'clear_cache'}, art=ART)
+                       {'action': 'settings'}, art=folder_art('tools'))
+    kodi.add_directory('Clear cache', {'action': 'clear_cache'}, art=folder_art('tools'))
     kodi.end_directory(content='')
