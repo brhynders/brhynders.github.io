@@ -4,6 +4,8 @@
 Everything UI/settings/logging related funnels through here so the rest of the
 addon stays readable and we only touch xbmc* modules in one place.
 """
+import json
+import os
 import sys
 from urllib.parse import urlencode, parse_qsl
 
@@ -238,12 +240,57 @@ def add_playable(label, params, info=None, art=None, media_type='movie', context
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=False)
 
 
+_VIEW_CONTENTS = ('movies', 'tvshows', 'seasons', 'episodes')
+_VIEWS_FILE = os.path.join(ADDON_PROFILE, 'views.json')
+
+
+def _views():
+    try:
+        with open(_VIEWS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:  # noqa: BLE001 - missing/corrupt == no saved views
+        return {}
+
+
+def get_view(content):
+    try:
+        return int(_views().get(content, 0))
+    except (ValueError, TypeError):
+        return 0
+
+
+def save_view(content, view_id):
+    data = _views()
+    data[content] = int(view_id)
+    if not os.path.isdir(ADDON_PROFILE):
+        os.makedirs(ADDON_PROFILE, exist_ok=True)
+    with open(_VIEWS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f)
+
+
+def _apply_view(content):
+    """Apply the user's saved view for this content type (set via 'Set view')."""
+    if content not in _VIEW_CONTENTS:
+        return
+    view_id = get_view(content)
+    if not view_id:
+        return
+    # Wait for Kodi to finish loading this directory, then switch the view.
+    for _ in range(40):
+        if (not xbmc.getCondVisibility('Container.IsUpdating')
+                and xbmc.getCondVisibility('Container.Content({0})'.format(content))):
+            break
+        xbmc.sleep(50)
+    xbmc.executebuiltin('Container.SetViewMode({0})'.format(view_id))
+
+
 def end_directory(content='videos', sort_methods=None, cache=True):
     if content:
         xbmcplugin.setContent(HANDLE, content)
     for method in (sort_methods or [xbmcplugin.SORT_METHOD_NONE]):
         xbmcplugin.addSortMethod(HANDLE, method)
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=cache)
+    _apply_view(content)
 
 
 def resolve(url, listitem):

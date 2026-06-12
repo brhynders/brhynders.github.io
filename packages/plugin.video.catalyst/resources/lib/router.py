@@ -95,6 +95,9 @@ def _route(action, p):
     if action == 'trakt_signout':
         return trakt_ui.sign_out()
 
+    if action == 'set_view':
+        return ui.set_view(p['content'])
+
     if action == 'tools':
         return ui.tools()
     if action == 'settings':

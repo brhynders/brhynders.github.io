@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Builds every directory screen from native Kodi list items."""
+import xbmc
+import xbmcgui
 import xbmcplugin
 
 from . import kodi
@@ -7,6 +9,28 @@ from . import tmdb
 from . import trakt
 
 ART = {'icon': kodi.ADDON_ICON}
+
+
+def _view_ctx(content):
+    """Context-menu entry to save the current skin view for this content type."""
+    url = kodi.build_url(action='set_view', content=content)
+    return [('Catalyst: Save current view', 'RunPlugin({0})'.format(url))]
+
+
+def set_view(content):
+    """Save whichever view is currently showing as the view for this content type.
+
+    Skin-agnostic: reads the focused view's control id (= its view-mode id).
+    """
+    win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+    xbmc.sleep(300)                       # let the context menu close, focus the list
+    view_id = win.getFocusId()
+    name = xbmc.getInfoLabel('Container.Viewmode')
+    if not view_id:
+        kodi.notify('Could not read the current view')
+        return
+    kodi.save_view(content, view_id)
+    kodi.notify('{0} view saved: {1}'.format(content.capitalize(), name or view_id))
 
 # Per-folder icons drawn from the active skin's built-in "Default*.png" set, so
 # they look native to the user's skin and need no bundled assets.
@@ -193,7 +217,7 @@ def _movie_row(item, gmap=None, details=None, watched=None, resume=None):
     kodi.add_playable(info['title'],
                       {'action': 'play_movie', 'tmdb_id': info['tmdb']},
                       info=info, art=art, media_type='movie',
-                      context_menu=_trakt_ctx('movie', info['tmdb']))
+                      context_menu=_trakt_ctx('movie', info['tmdb']) + _view_ctx('movies'))
 
 
 def episode_row(tmdb_id, season, episode, show_title, year, imdb, info, art,
@@ -209,7 +233,8 @@ def episode_row(tmdb_id, season, episode, show_title, year, imdb, info, art,
                        'episode': episode, 'show_title': show_title, 'year': year,
                        'imdb': imdb},
                       info=info, art=art, media_type='episode',
-                      context_menu=_trakt_ctx('tv', tmdb_id, season=season, episode=episode))
+                      context_menu=_trakt_ctx('tv', tmdb_id, season=season, episode=episode)
+                      + _view_ctx('episodes'))
 
 
 def _show_row(item, gmap=None, details=None, watched=None):
@@ -218,7 +243,8 @@ def _show_row(item, gmap=None, details=None, watched=None):
         return
     kodi.add_directory(info['title'],
                        {'action': 'seasons', 'tmdb_id': info['tmdb']},
-                       info=info, art=art, media_type='tvshow')
+                       info=info, art=art, media_type='tvshow',
+                       context_menu=_view_ctx('tvshows'))
 
 
 def _enrich(media, items):
@@ -375,7 +401,8 @@ def seasons(tmdb_id):
                            {'action': 'episodes', 'tmdb_id': tmdb_id, 'season': num,
                             'show_title': show_info['title'], 'year': show_info.get('year', ''),
                             'imdb': imdb},
-                           info=info, art=art, media_type='season')
+                           info=info, art=art, media_type='season',
+                           context_menu=_view_ctx('seasons'))
     kodi.end_directory(content='seasons')
 
 

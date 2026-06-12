@@ -108,3 +108,51 @@ msgstr ""
 msgctxt "#32044"
 msgid "4K"
 msgstr ""
+
+msgctxt "#32050"
+msgid "Views"
+msgstr ""
+
+msgctxt "#32051"
+msgid "Movies view"
+msgstr ""
+
+msgctxt "#32052"
+msgid "TV Shows view"
+msgstr ""
+
+msgctxt "#32053"
+msgid "Seasons view"
+msgstr ""
+
+msgctxt "#32054"
+msgid "Episodes view"
+msgstr ""
+
+msgctxt "#32060"
+msgid "Skin Default"
+msgstr ""
+
+msgctxt "#32061"
+msgid "List"
+msgstr ""
+
+msgctxt "#32062"
+msgid "Poster"
+msgstr ""
+
+msgctxt "#32063"
+msgid "IconWall"
+msgstr ""
+
+msgctxt "#32064"
+msgid "Shift"
+msgstr ""
+
+msgctxt "#32065"
+msgid "InfoWall"
+msgstr ""
+
+msgctxt "#32066"
+msgid "WideList"
+msgstr ""
