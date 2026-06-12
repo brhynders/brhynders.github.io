@@ -29,8 +29,6 @@ def _route(action, p):
         return ui.movies_menu()
     if action == 'shows_menu':
         return ui.shows_menu()
-    if action == 'search_menu':
-        return ui.search_menu()
     if action == 'genres':
         return ui.genres(p['media'])
 
@@ -42,6 +40,22 @@ def _route(action, p):
         return ui.discover(p['media'], p['genre'], p.get('page', 1))
     if action == 'recommendations':
         return ui.recommendations(p['media'], p['tmdb'], p.get('page', 1))
+    if action == 'named':
+        return ui.named_list(p['media'], p['key'], p.get('page', 1))
+    if action == 'years':
+        return ui.years_menu(p['media'])
+    if action == 'year':
+        return ui.year_list(p['media'], p['year'], p.get('page', 1))
+    if action == 'langs':
+        return ui.langs_menu(p['media'])
+    if action == 'lang':
+        return ui.lang_list(p['media'], p['lang'], p.get('page', 1))
+    if action == 'networks':
+        return ui.networks_menu()
+    if action == 'network':
+        return ui.network_list(p['network'], p.get('page', 1))
+    if action == 'boxoffice':
+        return trakt_ui.boxoffice()
     if action == 'search':
         return ui.search(p['media'], p.get('page', 1), p.get('query'))
 
@@ -63,6 +77,10 @@ def _route(action, p):
         return trakt_ui.continue_watching(p['media'])
     if action == 'watched_seeds':
         return trakt_ui.watched_seeds(p['media'])
+    if action == 'calendar_menu':
+        return trakt_ui.calendar_menu()
+    if action == 'calendar':
+        return trakt_ui.calendar(p['window'])
     if action == 'trakt_list':
         return trakt_ui.show_list(p['kind'], p['media'])
     if action == 'trakt_lists':

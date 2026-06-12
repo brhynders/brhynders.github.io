@@ -61,7 +61,6 @@ def sign_out():
 # Menus & lists
 # ---------------------------------------------------------------------------
 _MENU = [
-    ('Continue Watching', 'trakt_continue', None, 'continue'),
     ('Watchlist', 'trakt_list', 'watchlist', 'watchlist'),
     ('Collection', 'trakt_list', 'collection', 'collection'),
     ('Recommended', 'trakt_list', 'recommended', 'recommended'),
@@ -131,6 +130,68 @@ def _render(media, items):
 def show_list(kind, media):
     feed = _FEEDS.get(kind, trakt.watchlist)
     _render(media, feed(_plural(media)) or [])
+
+
+def boxoffice():
+    _render('movie', trakt.boxoffice() or [])
+
+
+def calendar_menu():
+    kodi.add_directory('Recently Aired', {'action': 'calendar', 'window': 'recent'},
+                       art=ui.folder_art('because'))
+    kodi.add_directory('Upcoming', {'action': 'calendar', 'window': 'upcoming'},
+                       art=ui.folder_art('anticipated'))
+    kodi.add_directory('Premieres', {'action': 'calendar', 'window': 'premieres'},
+                       art=ui.folder_art('trending'))
+    kodi.end_directory(content='')
+
+
+def calendar(window):
+    """Episodes from the user's Trakt calendar (recently aired, upcoming, premieres)."""
+    from datetime import date, timedelta
+    today = date.today()
+    kind = 'shows'
+    if window == 'recent':
+        start, days = today - timedelta(days=7), 8
+    elif window == 'premieres':
+        start, days, kind = today, 30, 'shows/new'
+    else:
+        start, days = today, 14
+    items = trakt.calendar(start.isoformat(), days, kind=kind)
+    if window == 'recent':
+        items = list(reversed(items))      # most recent first
+
+    show_ids = []
+    for it in items:
+        tid = (it.get('show') or {}).get('ids', {}).get('tmdb')
+        if tid and tid not in show_ids:
+            show_ids.append(tid)
+    details = tmdb.bulk_show_details(show_ids)
+
+    for it in items[:60]:
+        show = it.get('show') or {}
+        ep = it.get('episode') or {}
+        tid = (show.get('ids') or {}).get('tmdb')
+        imdb = (show.get('ids') or {}).get('imdb') or ''
+        season, number = ep.get('season'), ep.get('number')
+        if not (tid and season and number):
+            continue
+        d = details.get(tid)
+        if d:
+            show_info, show_art = tmdb.map_show(d, details=d)
+        else:
+            show_info, show_art = {'title': show.get('title', '')}, {}
+        aired = (it.get('first_aired') or '')[:10]
+        info = {'title': ep.get('title', ''), 'tvshowtitle': show_info.get('title', ''),
+                'season': season, 'episode': number, 'premiered': aired,
+                'tmdb': tid, 'imdb': imdb}
+        art = {'poster': show_art.get('poster', ''), 'thumb': show_art.get('poster', ''),
+               'fanart': show_art.get('fanart', '')}
+        label = '{0}  {1} {2}x{3:02d}. {4}'.format(
+            aired, show_info.get('title', ''), season, number, ep.get('title', ''))
+        ui.episode_row(tid, season, number, show_info.get('title', ''),
+                       show_info.get('year', ''), imdb, info, art, label=label)
+    kodi.end_directory(content='episodes')
 
 
 def watched_seeds(media):

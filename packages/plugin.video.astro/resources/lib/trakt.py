@@ -225,6 +225,12 @@ def popular(media):
                    TTL_LIST)
 
 
+def boxoffice():
+    return _cached('trakt:boxoffice',
+                   lambda: _request('GET', '/movies/boxoffice', auth=False) or [],
+                   TTL_LIST)
+
+
 def anticipated(media):
     return _cached('trakt:antic:{0}'.format(media),
                    lambda: _request('GET', '/{0}/anticipated'.format(media),
@@ -240,6 +246,14 @@ def playback(media):
 def history(media):
     """Recently watched, newest first. media is 'movies' or 'episodes'."""
     return _request('GET', '/sync/history/{0}'.format(media), params={'limit': 40}) or []
+
+
+def calendar(start_date, days, kind='shows'):
+    """Calendar for the user's shows. kind: 'shows' (airing) or 'shows/new' (premieres)."""
+    return _cached('trakt:cal:{0}:{1}:{2}'.format(kind, start_date, days),
+                   lambda: _request('GET', '/calendars/my/{0}/{1}/{2}'.format(
+                       kind, start_date, days)) or [],
+                   TTL_WATCHED)
 
 
 def my_lists():

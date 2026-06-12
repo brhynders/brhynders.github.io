@@ -81,9 +81,9 @@ def shows(category, page=1):
     return _get(paths.get(category, 'tv/popular'), page=page)
 
 
-def discover(media, genre_id, page=1):
-    return _get('discover/{0}'.format(media), with_genres=genre_id, page=page,
-                sort_by='popularity.desc')
+def discover(media, page=1, **params):
+    params.setdefault('sort_by', 'popularity.desc')
+    return _get('discover/{0}'.format(media), page=page, **params)
 
 
 def recommendations(media, tmdb_id, page=1):
