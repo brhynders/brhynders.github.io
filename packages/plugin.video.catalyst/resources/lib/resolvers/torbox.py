@@ -87,14 +87,18 @@ def check_cached(hashes):
 
 
 def _add_magnet(magnet):
+    """Add a magnet and return the created-torrent data dict (or None).
+
+    For already-cached magnets the response often already carries the file list
+    and a ready flag, which lets resolve() skip the extra mylist round-trip.
+    """
     import requests
     try:
         r = requests.post('{0}/torrents/createtorrent'.format(BASE),
                           headers=_headers(),
                           data={'magnet': magnet, 'seed': 3, 'allow_zip': 'false'},
                           timeout=25)
-        data = r.json().get('data') or {}
-        return data.get('torrent_id') or data.get('queued_id')
+        return r.json().get('data') or {}
     except Exception as exc:  # noqa: BLE001
         kodi.log_error('Torbox createtorrent failed: {0}'.format(exc))
         return None
@@ -136,8 +140,17 @@ def _request_link(torrent_id, file_id):
         return None
 
 
-def resolve(source):
-    """Turn a source dict into a directly playable URL, or None on failure."""
+def _is_ready(data):
+    return bool(data and (data.get('download_present') or data.get('download_finished')))
+
+
+def resolve(source, cached=False):
+    """Turn a source dict into a directly playable URL, or None on failure.
+
+    Pass cached=True for sources we already confirmed are on Torbox (the only
+    kind we show). Those are available the moment they're added, so we skip the
+    download-wait poll and resolve in the minimum two calls: add + request link.
+    """
     if not is_configured():
         kodi.notify('Set your Torbox API key in settings')
         return None
@@ -149,25 +162,31 @@ def resolve(source):
         kodi.log_error('Torbox: source has no magnet (direct torrents unsupported in v1)')
         return None
 
-    torrent_id = _add_magnet(magnet)
+    created = _add_magnet(magnet)
+    if not created:
+        return None
+    torrent_id = created.get('torrent_id') or created.get('queued_id')
     if not torrent_id:
         return None
 
-    # Cached torrents become available almost immediately; poll briefly.
-    torrent = None
-    for _ in range(10):
-        torrent = _get_torrent(torrent_id)
-        if torrent and (torrent.get('download_present') or torrent.get('download_finished')):
-            break
-        time.sleep(1.5)
+    # Fast path: createtorrent already returned a ready file list - go straight
+    # to the download link. Otherwise fetch the file list, polling only as much
+    # as needed (cached sources are ready at once; uncached may be downloading).
+    files = created.get('files') if _is_ready(created) else None
+    if not files:
+        tries, delay = (3, 0.5) if cached else (10, 1.5)
+        for i in range(tries):
+            torrent = _get_torrent(torrent_id)
+            if _is_ready(torrent):
+                files = torrent.get('files')
+                break
+            if i < tries - 1:
+                time.sleep(delay)
+        if not files:
+            kodi.notify('Source not cached on Torbox yet - try another')
+            return None
 
-    if not torrent:
-        return None
-    if not (torrent.get('download_present') or torrent.get('download_finished')):
-        kodi.notify('Source not cached on Torbox yet - try another')
-        return None
-
-    best = _best_video_file(torrent.get('files') or [])
+    best = _best_video_file(files or [])
     if not best:
         kodi.log_error('Torbox: no video file in torrent {0}'.format(torrent_id))
         return None

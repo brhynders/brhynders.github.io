@@ -49,7 +49,7 @@ def _publish_now_playing(payload):
 
 
 def _play(source, list_item, payload=None):
-    url = torbox.resolve(source)
+    url = torbox.resolve(source, cached=source.get('cached', False))
     if not url:
         kodi.notify('Could not resolve the stream')
         kodi.resolve_fail()
