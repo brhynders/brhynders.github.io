@@ -22,7 +22,7 @@ msgid "TMDB Language (e.g. en-US)"
 msgstr ""
 
 msgctxt "#32003"
-msgid "Rich metadata (cast, runtime, studio, trailer)"
+msgid "Rich metadata on lists (slower - fetches cast/runtime per item)"
 msgstr ""
 
 msgctxt "#32010"

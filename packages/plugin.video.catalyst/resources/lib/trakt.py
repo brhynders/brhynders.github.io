@@ -8,10 +8,12 @@ import json
 import os
 import time
 
-import requests
-
 from . import kodi
 from . import cache
+
+# `requests` is imported lazily inside each network call. The hot path for static
+# menus is trakt.is_authorised(), a pure disk read - it must not drag in the HTTP
+# stack. See the matching note in tmdb.py.
 
 API = 'https://api.trakt.tv'
 OOB = 'urn:ietf:wg:oauth:2.0:oob'
@@ -65,6 +67,7 @@ def sign_out():
     token = _load()
     if token.get('access_token') and has_credentials():
         try:
+            import requests
             requests.post('{0}/oauth/revoke'.format(API), timeout=15, json={
                 'token': token['access_token'],
                 'client_id': _client_id(),
@@ -83,6 +86,7 @@ def sign_out():
 # Auth: device code flow
 # ---------------------------------------------------------------------------
 def _device_code():
+    import requests
     try:
         r = requests.post('{0}/oauth/device/code'.format(API), timeout=15,
                           json={'client_id': _client_id()})
@@ -95,6 +99,7 @@ def _device_code():
 
 def _poll_token(device_code):
     """One poll. Returns (token_dict, keep_waiting)."""
+    import requests
     try:
         r = requests.post('{0}/oauth/device/token'.format(API), timeout=15, json={
             'code': device_code,
@@ -116,6 +121,7 @@ def _refresh():
     token = _load()
     if not token.get('refresh_token') or not has_credentials():
         return False
+    import requests
     try:
         r = requests.post('{0}/oauth/token'.format(API), timeout=15, json={
             'refresh_token': token['refresh_token'],
@@ -163,6 +169,7 @@ def _request(method, path, data=None, params=None, auth=True):
         return None
     if auth and not _access_token():
         return None
+    import requests
     url = '{0}{1}'.format(API, path)
     try:
         r = requests.request(method, url, headers=_headers(auth), json=data,

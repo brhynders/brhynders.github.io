@@ -7,10 +7,11 @@ list -> ask Torbox for a direct download link to the best video file -> play.
 import re
 import time
 
-import requests
-
 from .. import kodi
 from .. import cache
+
+# `requests` is imported lazily per call - keeps it off the import path until a
+# stream is actually being resolved. See the note in tmdb.py.
 
 BASE = 'https://api.torbox.app/v1/api'
 VIDEO_EXT = ('.mkv', '.mp4', '.avi', '.mov', '.m4v', '.ts', '.wmv', '.flv', '.mpg', '.webm')
@@ -59,6 +60,7 @@ def check_cached(hashes):
         return cached
 
     # API accepts repeated hash params; chunk to keep the URL sane.
+    import requests
     for i in range(0, len(unknown), 50):
         chunk = unknown[i:i + 50]
         try:
@@ -85,6 +87,7 @@ def check_cached(hashes):
 
 
 def _add_magnet(magnet):
+    import requests
     try:
         r = requests.post('{0}/torrents/createtorrent'.format(BASE),
                           headers=_headers(),
@@ -98,6 +101,7 @@ def _add_magnet(magnet):
 
 
 def _get_torrent(torrent_id):
+    import requests
     try:
         r = requests.get('{0}/torrents/mylist'.format(BASE), headers=_headers(),
                          params={'id': torrent_id, 'bypass_cache': 'true'}, timeout=15)
@@ -120,6 +124,7 @@ def _best_video_file(files):
 
 
 def _request_link(torrent_id, file_id):
+    import requests
     try:
         r = requests.get('{0}/torrents/requestdl'.format(BASE),
                          params={'token': _api_key(), 'torrent_id': torrent_id,

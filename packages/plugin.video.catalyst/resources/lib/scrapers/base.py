@@ -21,10 +21,10 @@ URL templates may use these substitution vars:
 import re
 from urllib.parse import quote_plus
 
-import requests
-
 from .. import kodi
 from ..quality import parse_size_gb
+
+# `requests` imported lazily in _fetch - off the import path until a scrape runs.
 
 _HASH_RE = re.compile(r'^[a-fA-F0-9]{40}$')
 
@@ -92,6 +92,7 @@ class ScraperBase(object):
         }
 
     def _fetch(self, url):
+        import requests
         headers = dict(DEFAULT_HEADERS)
         if self.headers:
             headers.update(self.headers)

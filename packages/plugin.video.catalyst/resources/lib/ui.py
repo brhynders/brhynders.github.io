@@ -202,8 +202,16 @@ def genres(media):
 # ---------------------------------------------------------------------------
 # Listings
 # ---------------------------------------------------------------------------
-def _rich():
-    return kodi.get_bool('rich_metadata', True)
+def _rich_lists():
+    """Whether list pages fetch full per-item TMDB details (cast/runtime/etc).
+
+    Off by default: lists render straight from the TMDB listing payload (poster,
+    plot, year, rating, genres) - plenty to browse, and it avoids ~20 extra
+    detail calls per page. Full details are still loaded on drill-down (seasons/
+    episodes) and at play time, so opening a title is unaffected. Users who want
+    richer info dialogs on list rows can turn this on.
+    """
+    return kodi.get_bool('rich_metadata', False)
 
 
 def _movie_row(item, gmap=None, details=None, watched=None, resume=None):
@@ -248,15 +256,28 @@ def _show_row(item, gmap=None, details=None, watched=None):
 
 
 def _enrich(media, items):
-    """Return (genre_map, {id: details}, watched_set) for a page of results."""
-    gmap = tmdb.genre_map(media)
-    details = {}
-    if _rich() and items:
-        ids = [it['id'] for it in items if it.get('id')]
-        details = (tmdb.bulk_movie_details(ids) if media == 'movie'
-                   else tmdb.bulk_show_details(ids))
-    watched = trakt.watched_movie_ids() if media == 'movie' else set()
-    return gmap, details, watched
+    """Return (genre_map, {id: details}, watched_set) for a page of results.
+
+    The three lookups are independent network operations, so they run
+    concurrently - the page blocks on the slowest, not the sum. The watched
+    overlay is skipped entirely unless signed in to Trakt.
+    """
+    ids = [it['id'] for it in items if it.get('id')]
+    want_details = _rich_lists() and bool(ids)
+    want_watched = media == 'movie' and trakt.is_authorised()
+
+    def load_details():
+        if not want_details:
+            return {}
+        return (tmdb.bulk_movie_details(ids) if media == 'movie'
+                else tmdb.bulk_show_details(ids))
+
+    gmap, details, watched = kodi.parallel(
+        lambda: tmdb.genre_map(media),
+        load_details,
+        lambda: trakt.watched_movie_ids() if want_watched else set(),
+    )
+    return gmap or {}, details or {}, watched or set()
 
 
 def _paged(data, page, more_params):
@@ -410,9 +431,15 @@ def episodes(tmdb_id, season, show_title, year, imdb=''):
     details = tmdb.show_details(tmdb_id)
     show_info, show_art = tmdb.map_show(details, details=details)
     show_info['imdb'] = imdb
-    cast = show_info.get('cast') if _rich() else None
-    watched = trakt.watched_episode_map().get(str(tmdb_id), set())
-    season_data = tmdb.season_details(tmdb_id, season)
+    # Drill-down is always rich: show_details is already fetched, so cast is free.
+    cast = show_info.get('cast')
+    # season payload and the watched overlay are independent - fetch concurrently
+    season_data, watched_map = kodi.parallel(
+        lambda: tmdb.season_details(tmdb_id, season),
+        lambda: trakt.watched_episode_map() if trakt.is_authorised() else {},
+    )
+    season_data = season_data or {}
+    watched = (watched_map or {}).get(str(tmdb_id), set())
     for ep in season_data.get('episodes', []):
         epnum = ep.get('episode_number')
         info, art = tmdb.map_episode(ep, show_info, show_art, cast=cast)

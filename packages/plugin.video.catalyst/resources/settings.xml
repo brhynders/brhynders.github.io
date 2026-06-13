@@ -19,7 +19,7 @@
                 </setting>
                 <setting id="rich_metadata" type="boolean" label="32003">
                     <level>0</level>
-                    <default>true</default>
+                    <default>false</default>
                     <control type="toggle"/>
                 </setting>
             </group>

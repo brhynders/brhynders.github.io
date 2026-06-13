@@ -109,17 +109,23 @@ def _tmdb_ids(items, media):
 def _render(media, items):
     ids = _tmdb_ids(items, media)
     if media == 'movie':
-        details = tmdb.bulk_movie_details(ids)
-        gmap = tmdb.genre_map('movie')
-        watched = trakt.watched_movie_ids()
+        details, gmap, watched = kodi.parallel(
+            lambda: tmdb.bulk_movie_details(ids),
+            lambda: tmdb.genre_map('movie'),
+            trakt.watched_movie_ids,
+        )
+        details, gmap, watched = details or {}, gmap or {}, watched or set()
         for tid in ids:
             d = details.get(tid)
             if d:
                 ui._movie_row(d, gmap=gmap, details=d, watched=watched)
         kodi.end_directory(content='movies')
     else:
-        details = tmdb.bulk_show_details(ids)
-        gmap = tmdb.genre_map('tv')
+        details, gmap = kodi.parallel(
+            lambda: tmdb.bulk_show_details(ids),
+            lambda: tmdb.genre_map('tv'),
+        )
+        details, gmap = details or {}, gmap or {}
         for tid in ids:
             d = details.get(tid)
             if d:
@@ -234,9 +240,13 @@ def continue_watching(media):
             if tid and tid not in prog:
                 ids.append(tid)
                 prog[tid] = it.get('progress', 0)
-        details = tmdb.bulk_movie_details(ids)
-        gmap = tmdb.genre_map('movie')
-        watched = trakt.watched_movie_ids()
+        # detail fetch, genre map and watched overlay are independent - overlap them
+        details, gmap, watched = kodi.parallel(
+            lambda: tmdb.bulk_movie_details(ids),
+            lambda: tmdb.genre_map('movie'),
+            trakt.watched_movie_ids,
+        )
+        details, gmap, watched = details or {}, gmap or {}, watched or set()
         for tid in ids:
             d = details.get(tid)
             if not d:
@@ -247,9 +257,11 @@ def continue_watching(media):
         kodi.end_directory(content='movies')
         return
 
-    # episodes
+    # episodes - parse first, then fetch all show + season payloads concurrently
+    # instead of two serial round-trips per row.
     items = sorted(trakt.playback('episodes'),
                    key=lambda i: i.get('paused_at', ''), reverse=True)
+    rows = []
     for it in items[:40]:
         show = it.get('show') or {}
         ep = it.get('episode') or {}
@@ -257,12 +269,24 @@ def continue_watching(media):
         imdb = (show.get('ids') or {}).get('imdb') or ''
         season = ep.get('season')
         number = ep.get('number')
-        progress = it.get('progress', 0)
         if not (tid and season and number):
             continue
-        sdetails = tmdb.show_details(tid)
+        rows.append((tid, season, number, imdb, it.get('progress', 0)))
+
+    show_ids = list({r[0] for r in rows})
+    season_pairs = list({(r[0], r[1]) for r in rows})
+    shows, seasons_data = kodi.parallel(
+        lambda: tmdb.bulk_show_details(show_ids),
+        lambda: tmdb.bulk_season_details(season_pairs),
+    )
+    shows, seasons_data = shows or {}, seasons_data or {}
+
+    for tid, season, number, imdb, progress in rows:
+        sdetails = shows.get(tid)
+        if not sdetails:
+            continue
         show_info, show_art = tmdb.map_show(sdetails, details=sdetails)
-        season_data = tmdb.season_details(tid, season)
+        season_data = seasons_data.get((tid, season)) or {}
         epobj = next((x for x in season_data.get('episodes', [])
                       if x.get('episode_number') == number), None)
         if not epobj:

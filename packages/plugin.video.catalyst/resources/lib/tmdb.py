@@ -6,10 +6,13 @@ Responses are cached (see cache.py): listings briefly, details/genres for days.
 import json
 import threading
 
-import requests
-
 from . import kodi
 from . import cache
+
+# NOTE: `requests` is imported lazily inside the functions that hit the network.
+# Kodi starts a fresh interpreter for every navigation, and importing requests
+# (urllib3, certifi, charset-normalizer, ...) costs 100ms+. Keeping it out of
+# module import means static menus that never touch TMDB pay nothing for it.
 
 API = 'https://api.themoviedb.org/3'
 IMG = 'https://image.tmdb.org/t/p'
@@ -44,6 +47,7 @@ def _get(path, ttl=TTL_LIST, **params):
     hit = cache.get(ck)
     if hit is not None:
         return hit
+    import requests
     try:
         r = requests.get('{0}/{1}'.format(API, path.lstrip('/')), params=params, timeout=15)
         r.raise_for_status()
@@ -146,6 +150,15 @@ def bulk_movie_details(ids):
 
 def bulk_show_details(ids):
     return _bulk(ids, show_details)
+
+
+def bulk_season_details(pairs):
+    """Fetch many seasons concurrently. pairs = [(tmdb_id, season), ...].
+
+    Returns {(tmdb_id, season): data} - lets callers avoid a serial
+    show_details/season_details round-trip per row.
+    """
+    return _bulk(pairs, lambda p: season_details(p[0], p[1]))
 
 
 # ---------------------------------------------------------------------------

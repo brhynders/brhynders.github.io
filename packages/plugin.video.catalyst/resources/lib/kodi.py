@@ -36,6 +36,34 @@ def set_runtime(argv):
 
 
 # ---------------------------------------------------------------------------
+# Concurrency
+# ---------------------------------------------------------------------------
+def parallel(*tasks, timeout=30):
+    """Run zero-arg callables concurrently, returning their results in order.
+
+    Used to overlap independent network calls (e.g. a TMDB detail fetch and a
+    Trakt watched-overlay fetch) so a screen blocks on the slowest one rather
+    than the sum of them. A task that raises yields None in its slot.
+    """
+    import threading
+    results = [None] * len(tasks)
+
+    def run(i, fn):
+        try:
+            results[i] = fn()
+        except Exception as exc:  # noqa: BLE001 - one task must not sink the rest
+            log_error('parallel task {0} failed: {1}'.format(i, exc))
+
+    threads = [threading.Thread(target=run, args=(i, fn)) for i, fn in enumerate(tasks)]
+    for t in threads:
+        t.daemon = True
+        t.start()
+    for t in threads:
+        t.join(timeout)
+    return results
+
+
+# ---------------------------------------------------------------------------
 # URLs / params
 # ---------------------------------------------------------------------------
 def build_url(**params):
