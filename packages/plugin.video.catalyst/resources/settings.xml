@@ -211,6 +211,11 @@
                     <default>false</default>
                     <control type="toggle"/>
                 </setting>
+                <setting id="resolve_failover" type="boolean" label="32033">
+                    <level>0</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
             </group>
         </category>
     </section>

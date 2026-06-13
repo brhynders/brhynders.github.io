@@ -89,6 +89,10 @@ msgctxt "#32032"
 msgid "Auto-play best source (skip the chooser)"
 msgstr ""
 
+msgctxt "#32033"
+msgid "Auto-try next source if a link fails to resolve"
+msgstr ""
+
 msgctxt "#32040"
 msgid "CAM"
 msgstr ""
