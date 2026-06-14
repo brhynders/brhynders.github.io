@@ -32,15 +32,16 @@ def set_runtime(argv):
     """Refresh per-navigation runtime state from the live argv (called by the router).
 
     With reuseLanguageInvoker enabled (see addon.xml) the interpreter and this
-    module persist across clicks, so the handle, base url and settings object
-    must be re-read each dispatch - otherwise we'd build a directory against the
-    previous click's handle or serve settings the user just changed in the
-    dialog. The Addon() instance is re-created because it snapshots settings.
+    module persist across clicks, so the handle and base url must be re-read
+    each dispatch - otherwise we'd build a directory against the previous
+    click's handle. Settings freshness is handled separately by the mtime-gated
+    cache below, so we no longer reconstruct Addon() here (that re-parsed every
+    setting on every click, enough to trip Kodi's busy spinner).
     """
-    global BASE_URL, HANDLE, ADDON
+    global BASE_URL, HANDLE
     BASE_URL = argv[0]
     HANDLE = int(argv[1])
-    ADDON = xbmcaddon.Addon()
+    _DIR_ITEMS.clear()      # drop any items a prior navigation left unflushed
 
 
 # ---------------------------------------------------------------------------
@@ -88,20 +89,52 @@ def parse_params(query):
 # ---------------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------------
+# In-memory settings cache (Redlight-style). Under reuseLanguageInvoker the
+# interpreter persists across navigations, so reading each setting through
+# xbmcaddon.Addon() every click - or reconstructing Addon() per click - is
+# wasted work. We memoise values in a dict and only reload (re-reading Addon)
+# when the on-disk settings.xml actually changes, detected via its mtime. The
+# steady-state hot path is one stat() call plus dict lookups.
+_SETTINGS_FILE = os.path.join(ADDON_PROFILE, 'settings.xml')
+_settings = {}
+_settings_mtime = None
+
+
+def _settings_cache():
+    """Return the live settings dict, refreshing it only when settings.xml changed."""
+    global _settings, _settings_mtime, ADDON
+    try:
+        mtime = os.path.getmtime(_SETTINGS_FILE)
+    except OSError:                       # not written until the user saves once
+        mtime = 0
+    if mtime != _settings_mtime:
+        _settings_mtime = mtime
+        ADDON = xbmcaddon.Addon()         # re-read settings only on a real change
+        _settings = {}
+    return _settings
+
+
+def _raw_setting(key):
+    cache = _settings_cache()
+    if key not in cache:
+        cache[key] = ADDON.getSetting(key)
+    return cache[key]
+
+
 def get_setting(key, default=''):
-    val = ADDON.getSetting(key)
+    val = _raw_setting(key)
     return val if val != '' else default
 
 
 def get_bool(key, default=False):
-    val = ADDON.getSetting(key)
+    val = _raw_setting(key)
     if val == '':
         return default
     return val.lower() == 'true'
 
 
 def get_int(key, default=0):
-    val = ADDON.getSetting(key)
+    val = _raw_setting(key)
     try:
         return int(val)
     except (ValueError, TypeError):
@@ -110,6 +143,7 @@ def get_int(key, default=0):
 
 def set_setting(key, value):
     ADDON.setSetting(key, str(value))
+    _settings[key] = str(value)           # keep the cache coherent within this click
 
 
 def open_settings():
@@ -258,13 +292,20 @@ def make_listitem(label, info=None, art=None, media_type='video', playable=False
     return li
 
 
+# Items are buffered here and flushed in one addDirectoryItems() call by
+# end_directory() - a single batched hand-off to Kodi populates the screen
+# faster (and with less spinner) than a per-row addDirectoryItem() loop.
+# Reset each navigation by set_runtime() so a reused interpreter never carries
+# items across clicks.
+_DIR_ITEMS = []
+
+
 def add_directory(label, params, info=None, art=None, media_type='video', context_menu=None):
     """Add a folder row that calls back into the addon."""
     li = make_listitem(label, info=info, art=art, media_type=media_type)
     if context_menu:
         li.addContextMenuItems(context_menu)
-    url = build_url(**params)
-    xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=True)
+    _DIR_ITEMS.append((build_url(**params), li, True))
 
 
 def add_playable(label, params, info=None, art=None, media_type='movie', context_menu=None):
@@ -272,8 +313,7 @@ def add_playable(label, params, info=None, art=None, media_type='movie', context
     li = make_listitem(label, info=info, art=art, media_type=media_type, playable=True)
     if context_menu:
         li.addContextMenuItems(context_menu)
-    url = build_url(**params)
-    xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=False)
+    _DIR_ITEMS.append((build_url(**params), li, False))
 
 
 _VIEW_CONTENTS = ('movies', 'tvshows', 'seasons', 'episodes')
@@ -321,6 +361,9 @@ def _apply_view(content):
 
 
 def end_directory(content='videos', sort_methods=None, cache=True):
+    if _DIR_ITEMS:
+        xbmcplugin.addDirectoryItems(HANDLE, _DIR_ITEMS, len(_DIR_ITEMS))
+        _DIR_ITEMS.clear()
     if content:
         xbmcplugin.setContent(HANDLE, content)
     for method in (sort_methods or [xbmcplugin.SORT_METHOD_NONE]):

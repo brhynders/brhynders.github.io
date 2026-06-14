@@ -7,10 +7,13 @@ top-level import of playback/trakt_ui would make even a static menu pay for the
 scraper + resolver + HTTP stack it never uses. Each branch pulls in only what it
 needs.
 """
+import time
+
 from . import kodi
 
 
 def dispatch(argv):
+    start = time.perf_counter()
     kodi.set_runtime(argv)
     params = kodi.parse_params(argv[2] if len(argv) > 2 else '')
     action = params.get('action')
@@ -23,6 +26,15 @@ def dispatch(argv):
         # If Kodi is waiting on a resolved url, release it cleanly.
         if action in ('play_movie', 'play_episode'):
             kodi.resolve_fail()
+    finally:
+        # Perf guard: a menu build slower than Kodi's ~100ms busy-dialog threshold
+        # is what makes the spinner flash. Stay silent under it; flag slow builds
+        # so a future regression is visible in the log. Play actions legitimately
+        # take seconds, so they're excluded.
+        if action not in ('play_movie', 'play_episode'):
+            elapsed = (time.perf_counter() - start) * 1000
+            if elapsed > 75:
+                kodi.log('slow nav action={0} took {1:.0f}ms'.format(action, elapsed))
 
 
 # Actions handled by each lazily-imported module. Built once at import.
