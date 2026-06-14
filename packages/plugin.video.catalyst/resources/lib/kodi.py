@@ -29,10 +29,18 @@ HANDLE = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].lstrip('-').isdig
 
 
 def set_runtime(argv):
-    """Refresh BASE_URL / HANDLE from the live argv (called by the router)."""
-    global BASE_URL, HANDLE
+    """Refresh per-navigation runtime state from the live argv (called by the router).
+
+    With reuseLanguageInvoker enabled (see addon.xml) the interpreter and this
+    module persist across clicks, so the handle, base url and settings object
+    must be re-read each dispatch - otherwise we'd build a directory against the
+    previous click's handle or serve settings the user just changed in the
+    dialog. The Addon() instance is re-created because it snapshots settings.
+    """
+    global BASE_URL, HANDLE, ADDON
     BASE_URL = argv[0]
     HANDLE = int(argv[1])
+    ADDON = xbmcaddon.Addon()
 
 
 # ---------------------------------------------------------------------------
